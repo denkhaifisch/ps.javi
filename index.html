@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Agenda Psicóloga</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-lime-100 flex items-center justify-center h-screen">
+  <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+    <h1 class="text-3xl font-bold text-lime-600 text-center mb-6">Iniciar Sesión</h1>
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label for="username" class="block text-sm font-medium text-gray-700">Usuario</label>
+        <input type="text" id="username" class="mt-1 w-full p-2 border border-lime-300 rounded focus:ring-lime-500 focus:border-lime-500" placeholder="admin">
+      </div>
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
+        <input type="password" id="password" class="mt-1 w-full p-2 border border-lime-300 rounded focus:ring-lime-500 focus:border-lime-500" placeholder="admin">
+      </div>
+      <button type="submit" class="w-full bg-lime-600 text-white py-2 rounded hover:bg-lime-700 transition">Entrar</button>
+    </form>
+  </div>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      if (username === 'admin' && password === 'admin') {
+        window.location.href = 'calendar.html';
+      } else {
+        alert('Usuario o contraseña incorrectos');
+      }
+    });
+  </script>
+</body>
+</html>

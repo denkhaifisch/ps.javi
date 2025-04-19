@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Desagendar Cita</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-lime-100 flex items-center justify-center h-screen">
+  <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+    <h1 class="text-2xl font-bold text-lime-600 mb-4">Desagendar Cita</h1>
+    <form id="unscheduleForm" class="space-y-4">
+      <div>
+        <label for="name" class="block text-sm font-medium text-gray-700">Nombre del Paciente</label>
+        <input type="text" id="name" class="mt-1 w-full p-2 border border-lime-300 rounded" required>
+      </div>
+      <div>
+        <label for="date" class="block text-sm font-medium text-gray-700">Fecha</label>
+        <input type="date" id="date" class="mt-1 w-full p-2 border border-lime-300 rounded" required>
+      </div>
+      <div>
+        <label for="time" class="block text-sm font-medium text-gray-700">Hora</label>
+        <input type="time" id="time" class="mt-1 w-full p-2 border border-lime-300 rounded" required>
+      </div>
+      <button type="submit" class="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600">Desagendar</button>
+    </form>
+    <button onclick="window.location.href='calendar.html'" class="mt-4 text-lime-600 hover:underline">Volver</button>
+  </div>
+  <script>
+    document.getElementById('unscheduleForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const date = document.getElementById('date').value;
+      const time = document.getElementById('time').value;
+      alert(`Cita de ${name} el ${date} a las ${time} desagendada.`);
+      window.location.href = 'calendar.html';
+    });
+  </script>
+</body>
+</html>
