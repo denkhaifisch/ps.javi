@@ -65,7 +65,31 @@
   <script>
     const backendUrl = 'https://ps-javi-backend.vercel.app';
     const token = localStorage.getItem('token');
-    let calendar; // Declarar calendar como global
+    let calendar;
+
+    // Verificar token al cargar la página
+    if (!token) {
+      window.location.href = 'index.html';
+    }
+
+    // Función para verificar el token con el backend
+    async function verifyToken() {
+      try {
+        const response = await fetch(`${backendUrl}/appointments`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        return true;
+      } catch (error) {
+        console.error('Error al verificar token:', error);
+        return false;
+      }
+    }
 
     // Función para cargar citas
     async function loadAppointments() {
@@ -77,12 +101,16 @@
           }
         });
         if (!response.ok) {
+          if (response.status === 401) {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+          }
           throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
         const appointments = await response.json();
         console.log('Citas cargadas:', appointments);
 
-        // Actualizar lista de citas (vista reducida)
+        // Actualizar lista de citas
         const list = document.getElementById('appointmentsList');
         list.innerHTML = '';
         if (appointments.length === 0) {
@@ -126,6 +154,10 @@
                   }
                 });
                 if (!response.ok) {
+                  if (response.status === 401) {
+                    localStorage.removeItem('token');
+                    window.location.href = 'index.html';
+                  }
                   throw new Error(`Error ${response.status}: ${response.statusText}`);
                 }
                 alert('Cita eliminada exitosamente');
@@ -150,7 +182,15 @@
     }
 
     // Inicializar FullCalendar
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', async function () {
+      // Verificar token antes de cargar el calendario
+      const isValidToken = await verifyToken();
+      if (!isValidToken) {
+        localStorage.removeItem('token');
+        window.location.href = 'index.html';
+        return;
+      }
+
       const calendarEl = document.getElementById('calendar');
       calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
@@ -209,6 +249,10 @@
           body: JSON.stringify({ patient_name, date, time, notes })
         });
         if (!response.ok) {
+          if (response.status === 401) {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+          }
           throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
         alert('Cita creada exitosamente');
