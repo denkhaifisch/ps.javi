@@ -9,6 +9,8 @@
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
   <!-- FullCalendar JS -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+  <!-- FullCalendar Spanish Locale -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/es.js"></script>
   <style>
     #calendar {
       max-width: 900px;
@@ -61,7 +63,7 @@
   </div>
 
   <script>
-    const backendUrl = 'https://ps-javi-backend.vercel.app'; // Cambiar a http://localhost:3000 para pruebas locales
+    const backendUrl = 'https://ps-javi-backend.vercel.app';
     const token = localStorage.getItem('token');
 
     // Función para cargar citas
@@ -115,6 +117,12 @@
           left: 'prev,next today',
           center: 'title',
           right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        buttonText: {
+          today: 'Hoy',
+          month: 'Mes',
+          week: 'Semana',
+          day: 'Día'
         },
         events: async function (fetchInfo, successCallback, failureCallback) {
           const appointments = await loadAppointments();
