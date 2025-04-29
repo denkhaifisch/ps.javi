@@ -3,37 +3,78 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Desagendar Cita</title>
+  <title>Eliminar Cita - Psicóloga</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-lime-100 flex items-center justify-center h-screen">
-  <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-    <h1 class="text-2xl font-bold text-lime-600 mb-4">Desagendar Cita</h1>
-    <form id="unscheduleForm" class="space-y-4">
-      <div>
-        <label for="name" class="block text-sm font-medium text-gray-700">Nombre del Paciente</label>
-        <input type="text" id="name" class="mt-1 w-full p-2 border border-lime-300 rounded" required>
-      </div>
-      <div>
-        <label for="date" class="block text-sm font-medium text-gray-700">Fecha</label>
-        <input type="date" id="date" class="mt-1 w-full p-2 border border-lime-300 rounded" required>
-      </div>
-      <div>
-        <label for="time" class="block text-sm font-medium text-gray-700">Hora</label>
-        <input type="time" id="time" class="mt-1 w-full p-2 border border-lime-300 rounded" required>
-      </div>
-      <button type="submit" class="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600">Desagendar</button>
-    </form>
-    <button onclick="window.location.href='calendar.html'" class="mt-4 text-lime-600 hover:underline">Volver</button>
+<body class="bg-lime-100 p-6">
+  <div class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-lg">
+    <h1 class="text-2xl font-bold text-lime-600 mb-4">Eliminar Cita</h1>
+    <p class="text-gray-700 mb-4">¿Estás seguro de que quieres eliminar esta cita?</p>
+    <div id="appointmentDetails" class="space-y-2 mb-6">
+      <p><strong>Nombre del Paciente:</strong> <span id="patient_name"></span></p>
+      <p><strong>Fecha:</strong> <span id="date"></span></p>
+      <p><strong>Hora:</strong> <span id="time"></span></p>
+    </div>
+    <div class="flex space-x-4">
+      <button id="confirmDelete" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">Confirmar Eliminación</button>
+      <button onclick="window.location.href='calendar.html'" class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">Cancelar</button>
+    </div>
   </div>
+
   <script>
-    document.getElementById('unscheduleForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const name = document.getElementById('name').value;
-      const date = document.getElementById('date').value;
-      const time = document.getElementById('time').value;
-      alert(`Cita de ${name} el ${date} a las ${time} desagendada.`);
+    const backendUrl = 'https://ps-javi-backend.vercel.app';
+    const token = localStorage.getItem('token');
+    const urlParams = new URLSearchParams(window.location.search);
+    const appointmentId = urlParams.get('id');
+
+    async function loadAppointment() {
+      try {
+        const response = await fetch(`${backendUrl}/appointments/${appointmentId}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        const apt = await response.json();
+        console.log('Cita cargada:', apt);
+        document.getElementById('patient_name').textContent = apt.patient_name;
+        document.getElementById('date').textContent = apt.date;
+        document.getElementById('time').textContent = apt.time;
+      } catch (error) {
+        console.error('Error al cargar cita:', error);
+        alert('Error al cargar la cita. Intenta de nuevo.');
+        window.location.href = 'calendar.html';
+      }
+    }
+
+    if (appointmentId) {
+      loadAppointment();
+    } else {
+      alert('No se especificó una cita para eliminar.');
       window.location.href = 'calendar.html';
+    }
+
+    document.getElementById('confirmDelete').addEventListener('click', async () => {
+      try {
+        const response = await fetch(`${backendUrl}/appointments/${appointmentId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        alert('Cita eliminada exitosamente');
+        window.location.href = 'calendar.html';
+      } catch (error) {
+        console.error('Error al eliminar cita:', error);
+        alert('Error al eliminar la cita. Intenta de nuevo.');
+      }
     });
   </script>
 </body>

@@ -26,6 +26,30 @@
   </div>
   <script>
     const backendUrl = 'https://ps-javi-backend.vercel.app';
+    const token = localStorage.getItem('token');
+
+    // Verificar si la sesión sigue activa
+    async function checkSession() {
+      if (token) {
+        try {
+          const response = await fetch(`${backendUrl}/appointments`, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (response.ok) {
+            window.location.href = 'calendar.html'; // Sesión válida, redirigir
+          } else {
+            localStorage.removeItem('token'); // Token inválido, limpiarlo
+          }
+        } catch (error) {
+          console.error('Error al verificar sesión:', error);
+          localStorage.removeItem('token');
+        }
+      }
+    }
+    checkSession();
 
     // Verificar si ya existe una cuenta
     async function checkAccount() {
@@ -35,7 +59,7 @@
           throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
         const result = await response.json();
-        console.log('Check account:', result); // Depuración
+        console.log('Check account:', result);
         if (result.accountCreated) {
           document.getElementById('signupSection').style.display = 'none';
         }

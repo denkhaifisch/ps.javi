@@ -57,7 +57,7 @@
       <button type="submit" class="bg-lime-600 text-white px-4 py-2 rounded-md hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-lime-500">Agregar Cita</button>
     </form>
 
-    <!-- Lista de citas programadas -->
+    <!-- Lista de citas programadas (vista reducida) -->
     <h2 class="text-xl font-bold text-lime-600 mb-4">Citas Programadas</h2>
     <ul id="appointmentsList" class="space-y-2"></ul>
   </div>
@@ -81,7 +81,7 @@
         const appointments = await response.json();
         console.log('Citas cargadas:', appointments);
 
-        // Actualizar lista de citas
+        // Actualizar lista de citas (vista reducida)
         const list = document.getElementById('appointmentsList');
         list.innerHTML = '';
         if (appointments.length === 0) {
@@ -94,7 +94,7 @@
             const li = document.createElement('li');
             li.className = 'appointment-item';
             li.innerHTML = `
-              <span>${apt.patient_name} - ${apt.date} ${apt.time} - ${apt.notes || 'Sin notas'}</span>
+              <span>${apt.patient_name} - ${apt.date} ${apt.time}</span>
               <div>
                 <button class="edit-btn bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 mr-2" data-id="${apt.id}">Editar</button>
                 <button class="delete-btn bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700" data-id="${apt.id}">Eliminar</button>
@@ -175,7 +175,12 @@
           successCallback(events);
         },
         eventClick: function (info) {
-          alert(`Cita: ${info.event.title}\nFecha: ${info.event.start.toLocaleString('es')}`);
+          window.location.href = `patient-info.html?id=${info.event.id}`;
+        },
+        dateClick: function (info) {
+          // Redirigir a schedule.html con la fecha seleccionada
+          const date = info.dateStr;
+          window.location.href = `schedule.html?date=${date}`;
         }
       });
       calendar.render();

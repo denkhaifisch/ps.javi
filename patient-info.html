@@ -3,21 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Información del Paciente</title>
+  <title>Información de Cita - Psicóloga</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-lime-100 flex items-center justify-center h-screen">
-  <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-    <h1 class="text-2xl font-bold text-lime-600 mb-4">Información del Paciente</h1>
-    <div class="space-y-2">
-      <p><strong>Nombre:</strong> Juan Pérez</p>
-      <p><strong>Teléfono:</strong> +56 9 1234 5678</p>
-      <p><strong>Correo:</strong> juan.perez@example.com</p>
-      <p><strong>Fecha:</strong> 19 de abril de 2025</p>
-      <p><strong>Hora:</strong> 10:00</p>
-      <p><strong>Notas:</strong> Sesión de terapia inicial.</p>
+<body class="bg-lime-100 p-6">
+  <div class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-lg">
+    <h1 class="text-2xl font-bold text-lime-600 mb-4">Información de Cita</h1>
+    <div id="appointmentDetails" class="space-y-4">
+      <p><strong>Nombre del Paciente:</strong> <span id="patient_name"></span></p>
+      <p><strong>Fecha:</strong> <span id="date"></span></p>
+      <p><strong>Hora:</strong> <span id="time"></span></p>
+      <p><strong>Notas:</strong> <span id="notes" class="whitespace-pre-wrap"></span></p>
     </div>
-    <button onclick="window.location.href='calendar.html'" class="mt-4 bg-lime-600 text-white px-4 py-2 rounded hover:bg-lime-700">Volver</button>
+    <div class="flex space-x-4 mt-6">
+      <button onclick="window.location.href='edit.html?id=' + appointmentId" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Editar Cita</button>
+      <button onclick="window.location.href='unschedule.html?id=' + appointmentId" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">Eliminar Cita</button>
+    </div>
+    <button onclick="window.location.href='calendar.html'" class="mt-4 text-lime-600 hover:underline">Volver al Calendario</button>
   </div>
+
+  <script>
+    const backendUrl = 'https://ps-javi-backend.vercel.app';
+    const token = localStorage.getItem('token');
+    const urlParams = new URLSearchParams(window.location.search);
+    const appointmentId = urlParams.get('id');
+
+    let appointmentData = null; // Para usar en los botones
+
+    async function loadAppointment() {
+      try {
+        const response = await fetch(`${backendUrl}/appointments/${appointmentId}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        const apt = await response.json();
+        console.log('Cita cargada:', apt);
+        appointmentData = apt;
+        document.getElementById('patient_name').textContent = apt.patient_name;
+        document.getElementById('date').textContent = apt.date;
+        document.getElementById('time').textContent = apt.time;
+        document.getElementById('notes').textContent = apt.notes || 'Sin notas';
+      } catch (error) {
+        console.error('Error al cargar cita:', error);
+        alert('Error al cargar la cita. Intenta de nuevo.');
+        window.location.href = 'calendar.html';
+      }
+    }
+
+    if (appointmentId) {
+      loadAppointment();
+    } else {
+      alert('No se especificó una cita para ver.');
+      window.location.href = 'calendar.html';
+    }
+  </script>
 </body>
 </html>
