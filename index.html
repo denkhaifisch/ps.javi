@@ -20,11 +20,9 @@
       </div>
       <button type="submit" class="bg-lime-600 text-white px-4 py-2 rounded hover:bg-lime-700">Iniciar Sesión</button>
     </form>
-    <!-- SECCIÓN PARA ELIMINAR MANUALMENTE DESPUÉS DE QUE LA PSICÓLOGA CREE SU CUENTA -->
-    <div id="signupSection" class="mt-4">
+    <div id="signupSection" class="mt-4 hidden">
       <button id="signupButton" class="bg-lime-600 text-white px-4 py-2 rounded hover:bg-lime-700">Crear cuenta</button>
     </div>
-    <!-- FIN DE LA SECCIÓN PARA ELIMINAR -->
   </div>
   <script>
     const backendUrl = 'https://ps-javi-backend.vercel.app';
@@ -41,9 +39,9 @@
             }
           });
           if (response.ok) {
-            window.location.href = 'calendar.html'; // Sesión válida, redirigir
+            window.location.href = 'calendar.html';
           } else {
-            localStorage.removeItem('token'); // Token inválido, limpiarlo
+            localStorage.removeItem('token');
           }
         } catch (error) {
           console.error('Error al verificar sesión:', error);
@@ -51,7 +49,24 @@
         }
       }
     }
+
+    // Verificar si ya existe una cuenta
+    async function checkAccount() {
+      try {
+        const response = await fetch(`${backendUrl}/check-account`);
+        const result = await response.json();
+        if (response.ok && !result.accountCreated) {
+          document.getElementById('signupSection').classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Error al verificar si existe cuenta:', error);
+        alert('Error al verificar si existe cuenta');
+      }
+    }
+
+    // Ejecutar verificaciones
     checkSession();
+    checkAccount();
 
     // Formulario de login
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -91,6 +106,7 @@
           const result = await response.json();
           if (response.ok) {
             alert('Cuenta creada. Revisa tu correo para verificar.');
+            document.getElementById('signupSection').classList.add('hidden');
           } else {
             alert(result.error);
           }
