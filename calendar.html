@@ -63,162 +63,165 @@
   </div>
 
   <script>
-  const backendUrl = 'https://ps-javi-backend.vercel.app';
-  const token = localStorage.getItem('token');
-  let calendar; // Declarar calendar como global
+    const backendUrl = 'https://ps-javi-backend.vercel.app';
+    const token = localStorage.getItem('token');
+    let calendar; // Declarar calendar como global
 
-  // Función para cargar citas
-  async function loadAppointments() {
-    try {
-      const response = await fetch(`${backendUrl}/appointments`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-      const appointments = await response.json();
-      console.log('Citas cargadas:', appointments);
-
-      // Actualizar lista de citas (vista reducida)
-      const list = document.getElementById('appointmentsList');
-      list.innerHTML = '';
-      if (appointments.length === 0) {
-        const li = document.createElement('li');
-        li.textContent = 'No hay citas programadas.';
-        li.className = 'appointment-item text-gray-500';
-        list.appendChild(li);
-      } else {
-        appointments.forEach(apt => {
-          const li = document.createElement('li');
-          li.className = 'appointment-item';
-          li.innerHTML = `
-            <span>${apt.patient_name} - ${apt.date} ${apt.time}</span>
-            <div>
-              <button class="edit-btn bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 mr-2" data-id="${apt.id}">Editar</button>
-              <button class="delete-btn bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700" data-id="${apt.id}">Eliminar</button>
-            </div>
-          `;
-          list.appendChild(li);
-        });
-      }
-
-      // Event listeners para botones de editar y eliminar
-      document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const appointmentId = btn.getAttribute('data-id');
-          window.location.href = `edit.html?id=${appointmentId}`;
-        });
-      });
-
-      document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const appointmentId = btn.getAttribute('data-id');
-          if (confirm('¿Estás seguro de que quieres eliminar esta cita?')) {
-            try {
-              const response = await fetch(`${backendUrl}/appointments/${appointmentId}`, {
-                method: 'DELETE',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-                }
-              });
-              if (!response.ok) {
-                throw new Error(`Error ${response.status}: ${response.statusText}`);
-              }
-              alert('Cita eliminada exitosamente');
-              await loadAppointments();
-              if (calendar) {
-                calendar.refetchEvents(); // Usar la variable global calendar
-              }
-            } catch (error) {
-              console.error('Error al eliminar cita:', error);
-              alert('Error al eliminar la cita: ' + error.message);
-            }
+    // Función para cargar citas
+    async function loadAppointments() {
+      try {
+        const response = await fetch(`${backendUrl}/appointments`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           }
         });
-      });
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        const appointments = await response.json();
+        console.log('Citas cargadas:', appointments);
 
-      return appointments;
-    } catch (error) {
-      console.error('Error al cargar citas:', error);
-      alert('Error al cargar las citas. Por favor, intenta de nuevo.');
-      return [];
+        // Actualizar lista de citas (vista reducida)
+        const list = document.getElementById('appointmentsList');
+        list.innerHTML = '';
+        if (appointments.length === 0) {
+          const li = document.createElement('li');
+          li.textContent = 'No hay citas programadas.';
+          li.className = 'appointment-item text-gray-500';
+          list.appendChild(li);
+        } else {
+          appointments.forEach(apt => {
+            const li = document.createElement('li');
+            li.className = 'appointment-item';
+            li.innerHTML = `
+              <span>${apt.patient_name} - ${apt.date} ${apt.time}</span>
+              <div>
+                <button class="edit-btn bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 mr-2" data-id="${apt.id}">Editar</button>
+                <button class="delete-btn bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700" data-id="${apt.id}">Eliminar</button>
+              </div>
+            `;
+            list.appendChild(li);
+          });
+        }
+
+        // Event listeners para botones de editar y eliminar
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const appointmentId = btn.getAttribute('data-id');
+            window.location.href = `edit.html?id=${appointmentId}`;
+          });
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const appointmentId = btn.getAttribute('data-id');
+            if (confirm('¿Estás seguro de que quieres eliminar esta cita?')) {
+              try {
+                const response = await fetch(`${backendUrl}/appointments/${appointmentId}`, {
+                  method: 'DELETE',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+                if (!response.ok) {
+                  throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                alert('Cita eliminada exitosamente');
+                await loadAppointments();
+                if (calendar) {
+                  calendar.refetchEvents();
+                }
+              } catch (error) {
+                console.error('Error al eliminar cita:', error);
+                alert('Error al eliminar la cita: ' + error.message);
+              }
+            }
+          });
+        });
+
+        return appointments;
+      } catch (error) {
+        console.error('Error al cargar citas:', error);
+        alert('Error al cargar las citas: ' + error.message);
+        return [];
+      }
     }
-  }
 
-  // Inicializar FullCalendar
-  document.addEventListener('DOMContentLoaded', function () {
-    const calendarEl = document.getElementById('calendar');
-    calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth',
-      locale: 'es',
-      height: 'auto',
-      headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay'
-      },
-      buttonText: {
-        today: 'Hoy',
-        month: 'Mes',
-        week: 'Semana',
-        day: 'Día'
-      },
-      events: async function (fetchInfo, successCallback, failureCallback) {
-        const appointments = await loadAppointments();
-        const events = appointments.map(apt => ({
-          title: `${apt.patient_name} - ${apt.notes || 'Sin notas'}`,
-          start: `${apt.date}T${apt.time}`,
-          id: apt.id
-        }));
-        successCallback(events);
-      },
-      eventClick: function (info) {
-        window.location.href = `patient-info.html?id=${info.event.id}`;
-      },
-      dateClick: function (info) {
-        // Redirigir a schedule.html con la fecha seleccionada
-        const date = info.dateStr;
-        window.location.href = `schedule.html?date=${date}`;
+    // Inicializar FullCalendar
+    document.addEventListener('DOMContentLoaded', function () {
+      const calendarEl = document.getElementById('calendar');
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'es',
+        height: 'auto',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        buttonText: {
+          today: 'Hoy',
+          month: 'Mes',
+          week: 'Semana',
+          day: 'Día'
+        },
+        events: async function (fetchInfo, successCallback, failureCallback) {
+          try {
+            const appointments = await loadAppointments();
+            const events = appointments.map(apt => ({
+              title: `${apt.patient_name} - ${apt.notes || 'Sin notas'}`,
+              start: `${apt.date}T${apt.time}`,
+              id: apt.id
+            }));
+            successCallback(events);
+          } catch (error) {
+            failureCallback(error);
+          }
+        },
+        eventClick: function (info) {
+          window.location.href = `patient-info.html?id=${info.event.id}`;
+        },
+        dateClick: function (info) {
+          const date = info.dateStr;
+          window.location.href = `schedule.html?date=${date}`;
+        }
+      });
+      calendar.render();
+    });
+
+    // Agregar nueva cita
+    document.getElementById('appointmentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const patient_name = document.getElementById('patient_name').value;
+      const date = document.getElementById('date').value;
+      const time = document.getElementById('time').value;
+      const notes = document.getElementById('notes').value;
+
+      try {
+        const response = await fetch(`${backendUrl}/appointments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ patient_name, date, time, notes })
+        });
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        alert('Cita creada exitosamente');
+        document.getElementById('appointmentForm').reset();
+        await loadAppointments();
+        if (calendar) {
+          calendar.refetchEvents();
+        }
+      } catch (error) {
+        console.error('Error al crear cita:', error);
+        alert('Error al crear la cita: ' + error.message);
       }
     });
-    calendar.render();
-  });
-
-  // Agregar nueva cita
-  document.getElementById('appointmentForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const patient_name = document.getElementById('patient_name').value;
-    const date = document.getElementById('date').value;
-    const time = document.getElementById('time').value;
-    const notes = document.getElementById('notes').value;
-
-    try {
-      const response = await fetch(`${backendUrl}/appointments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ patient_name, date, time, notes })
-      });
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-      alert('Cita creada exitosamente');
-      document.getElementById('appointmentForm').reset();
-      await loadAppointments();
-      if (calendar) {
-        calendar.refetchEvents(); // Usar la variable global calendar
-      }
-    } catch (error) {
-      console.error('Error al crear cita:', error);
-      alert('Error al crear la cita: ' + error.message);
-    }
-  });
-</script>
+  </script>
 </body>
 </html>
