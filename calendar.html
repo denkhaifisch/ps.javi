@@ -10,43 +10,49 @@
   <!-- FullCalendar JS -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
   <style>
-    /* Ajustes para el calendario */
     #calendar {
       max-width: 900px;
       margin: 0 auto;
+      padding-bottom: 20px;
     }
     .fc-event {
       cursor: pointer;
+      background-color: #4a9c4a;
+      border-color: #3d803d;
+    }
+    .appointment-item {
+      padding: 10px;
+      border-bottom: 1px solid #e5e7eb;
     }
   </style>
 </head>
 <body class="bg-lime-100 p-6">
   <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
-    <h1 class="text-2xl font-bold text-lime-600 mb-4">Calendario de Citas</h1>
+    <h1 class="text-2xl font-bold text-lime-600 mb-6">Calendario de Citas</h1>
 
     <!-- Calendario -->
-    <div id="calendar" class="mb-6"></div>
+    <div id="calendar" class="mb-8"></div>
 
     <!-- Formulario para agregar citas -->
     <h2 class="text-xl font-bold text-lime-600 mb-4">Agregar Nueva Cita</h2>
-    <form id="appointmentForm" class="space-y-4 mb-6">
+    <form id="appointmentForm" class="space-y-4 mb-8">
       <div>
-        <label for="patient_name" class="block text-sm font-medium">Nombre del Paciente</label>
-        <input type="text" id="patient_name" class="w-full p-2 border rounded" required>
+        <label for="patient_name" class="block text-sm font-medium text-gray-700">Nombre del Paciente</label>
+        <input type="text" id="patient_name" class="w-full p-2 border rounded-md focus:ring-lime-500 focus:border-lime-500" required>
       </div>
       <div>
-        <label for="date" class="block text-sm font-medium">Fecha</label>
-        <input type="date" id="date" class="w-full p-2 border rounded" required>
+        <label for="date" class="block text-sm font-medium text-gray-700">Fecha</label>
+        <input type="date" id="date" class="w-full p-2 border rounded-md focus:ring-lime-500 focus:border-lime-500" required>
       </div>
       <div>
-        <label for="time" class="block text-sm font-medium">Hora</label>
-        <input type="time" id="time" class="w-full p-2 border rounded" required>
+        <label for="time" class="block text-sm font-medium text-gray-700">Hora</label>
+        <input type="time" id="time" class="w-full p-2 border rounded-md focus:ring-lime-500 focus:border-lime-500" required>
       </div>
       <div>
-        <label for="notes" class="block text-sm font-medium">Notas</label>
-        <textarea id="notes" class="w-full p-2 border rounded"></textarea>
+        <label for="notes" class="block text-sm font-medium text-gray-700">Notas</label>
+        <textarea id="notes" class="w-full p-2 border rounded-md focus:ring-lime-500 focus:border-lime-500" rows="4"></textarea>
       </div>
-      <button type="submit" class="bg-lime-600 text-white px-4 py-2 rounded hover:bg-lime-700">Agregar Cita</button>
+      <button type="submit" class="bg-lime-600 text-white px-4 py-2 rounded-md hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-lime-500">Agregar Cita</button>
     </form>
 
     <!-- Lista de citas programadas -->
@@ -55,8 +61,48 @@
   </div>
 
   <script>
-    const backendUrl = 'https://ps-javi-backend.vercel.app'; // Cambiar a https://ps-javi-backend.vercel.app tras desplegar
+    const backendUrl = 'https://ps-javi-backend.vercel.app'; // Cambiar a http://localhost:3000 para pruebas locales
     const token = localStorage.getItem('token');
+
+    // Función para cargar citas
+    async function loadAppointments() {
+      try {
+        const response = await fetch(`${backendUrl}/appointments`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        const appointments = await response.json();
+        console.log('Citas cargadas:', appointments); // Depuración
+
+        // Actualizar lista de citas
+        const list = document.getElementById('appointmentsList');
+        list.innerHTML = '';
+        if (appointments.length === 0) {
+          const li = document.createElement('li');
+          li.textContent = 'No hay citas programadas.';
+          li.className = 'appointment-item text-gray-500';
+          list.appendChild(li);
+        } else {
+          appointments.forEach(apt => {
+            const li = document.createElement('li');
+            li.textContent = `${apt.patient_name} - ${apt.date} ${apt.time} - ${apt.notes || 'Sin notas'}`;
+            li.className = 'appointment-item';
+            list.appendChild(li);
+          });
+        }
+
+        return appointments;
+      } catch (error) {
+        console.error('Error al cargar citas:', error);
+        alert('Error al cargar las citas. Por favor, intenta de nuevo.');
+        return [];
+      }
+    }
 
     // Inicializar FullCalendar
     document.addEventListener('DOMContentLoaded', function () {
@@ -64,29 +110,20 @@
       const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         locale: 'es',
+        height: 'auto',
         headerToolbar: {
           left: 'prev,next today',
           center: 'title',
           right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
         events: async function (fetchInfo, successCallback, failureCallback) {
-          try {
-            const response = await fetch(`${backendUrl}/appointments`, {
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              }
-            });
-            const appointments = await response.json();
-            const events = appointments.map(apt => ({
-              title: `${apt.patient_name} - ${apt.notes || 'Sin notas'}`,
-              start: `${apt.date}T${apt.time}`,
-              id: apt.id
-            }));
-            successCallback(events);
-          } catch (error) {
-            failureCallback(error);
-          }
+          const appointments = await loadAppointments();
+          const events = appointments.map(apt => ({
+            title: `${apt.patient_name} - ${apt.notes || 'Sin notas'}`,
+            start: `${apt.date}T${apt.time}`,
+            id: apt.id
+          }));
+          successCallback(events);
         },
         eventClick: function (info) {
           alert(`Cita: ${info.event.title}\nFecha: ${info.event.start.toLocaleString('es')}`);
@@ -95,28 +132,36 @@
       calendar.render();
     });
 
-    // Cargar citas en la lista
-    async function loadAppointments() {
-      const response = await fetch(`${backendUrl}/appointments`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const appointments = await response.json();
-      const list = document.getElementById('appointmentsList');
-      list.innerHTML = '';
-      appointments.forEach(apt => {
-        const li = document.createElement('li');
-        li.textContent = `${apt.patient_name} - ${apt.date} ${apt.time} - ${apt.notes || 'Sin notas'}`;
-        list.appendChild(li);
-      });
-    }
-    loadAppointments();
-
     // Agregar nueva cita
     document.getElementById('appointmentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const patient_name = document.getElementById('patient_name').value;
       const date = document.getElementById('date').value;
-      const
+      const time = document.getElementById('time').value;
+      const notes = document.getElementById('notes').value;
+
+      try {
+        const response = await fetch(`${backendUrl}/appointments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ patient_name, date, time, notes })
+        });
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        alert('Cita creada exitosamente');
+        document.getElementById('appointmentForm').reset();
+        await loadAppointments(); // Actualizar lista
+        const calendar = document.getElementById('calendar')._calendarApi;
+        calendar.refetchEvents(); // Actualizar calendario
+      } catch (error) {
+        console.error('Error al crear cita:', error);
+        alert('Error al crear la cita. Por favor, intenta de nuevo.');
+      }
+    });
+  </script>
+</body>
+</html>
