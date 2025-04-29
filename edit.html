@@ -3,42 +3,124 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Editar Cita</title>
+  <title>Editar Cita - Psicóloga</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-lime-100 flex items-center justify-center h-screen">
-  <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+<body class="bg-lime-100 p-6">
+  <div class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-lg">
     <h1 class="text-2xl font-bold text-lime-600 mb-4">Editar Cita</h1>
     <form id="editForm" class="space-y-4">
       <div>
-        <label for="name" class="block text-sm font-medium text-gray-700">Nombre del Paciente</label>
-        <input type="text" id="name" class="mt-1 w-full p-2 border border-lime-300 rounded" value="Juan Pérez" required>
+        <label for="patient_name" class="block text-sm font-medium text-gray-700">Nombre del Paciente</label>
+        <input type="text" id="patient_name" class="w-full p-2 border rounded-md focus:ring-lime-500 focus:border-lime-500" required>
       </div>
       <div>
         <label for="date" class="block text-sm font-medium text-gray-700">Fecha</label>
-        <input type="date" id="date" class="mt-1 w-full p-2 border border-lime-300 rounded" value="2025-04-19" required>
+        <input type="date" id="date" class="w-full p-2 border rounded-md focus:ring-lime-500 focus:border-lime-500" required>
       </div>
       <div>
         <label for="time" class="block text-sm font-medium text-gray-700">Hora</label>
-        <input type="time" id="time" class="mt-1 w-full p-2 border border-lime-300 rounded" value="10:00" required>
+        <input type="time" id="time" class="w-full p-2 border rounded-md focus:ring-lime-500 focus:border-lime-500" required>
       </div>
       <div>
         <label for="notes" class="block text-sm font-medium text-gray-700">Notas</label>
-        <textarea id="notes" class="mt-1 w-full p-2 border border-lime-300 rounded">Sesión de terapia inicial.</textarea>
+        <textarea id="notes" class="w-full p-2 border rounded-md focus:ring-lime-500 focus:border-lime-500" rows="4"></textarea>
       </div>
-      <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Guardar Cambios</button>
+      <div class="flex space-x-4">
+        <button type="submit" class="bg-lime-600 text-white px-4 py-2 rounded-md hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-lime-500">Guardar Cambios</button>
+        <button type="button" id="deleteButton" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">Eliminar Cita</button>
+      </div>
     </form>
-    <button onclick="window.location.href='calendar.html'" class="mt-4 text-lime-600 hover:underline">Volver</button>
+    <button onclick="window.location.href='calendar.html'" class="mt-4 text-lime-600 hover:underline">Volver al Calendario</button>
   </div>
+
   <script>
-    document.getElementById('editForm').addEventListener('submit', (e) => {
+    const backendUrl = 'https://ps-javi-backend.vercel.app';
+    const token = localStorage.getItem('token');
+
+    // Obtener ID de la cita desde la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const appointmentId = urlParams.get('id');
+
+    // Cargar datos de la cita
+    async function loadAppointment() {
+      try {
+        const response = await fetch(`${backendUrl}/appointments/${appointmentId}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        const apt = await response.json();
+        console.log('Cita cargada:', apt);
+        document.getElementById('patient_name').value = apt.patient_name;
+        document.getElementById('date').value = apt.date;
+        document.getElementById('time').value = apt.time;
+        document.getElementById('notes').value = apt.notes || '';
+      } catch (error) {
+        console.error('Error al cargar cita:', error);
+        alert('Error al cargar la cita. Intenta de nuevo.');
+      }
+    }
+    if (appointmentId) {
+      loadAppointment();
+    } else {
+      alert('No se especificó una cita para editar.');
+      window.location.href = 'calendar.html';
+    }
+
+    // Guardar cambios
+    document.getElementById('editForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('name').value;
+      const patient_name = document.getElementById('patient_name').value;
       const date = document.getElementById('date').value;
       const time = document.getElementById('time').value;
       const notes = document.getElementById('notes').value;
-      alert(`Cita de ${name} actualizada para el ${date} a las ${time}. Notas: ${notes}`);
-      window.location.href = 'calendar.html';
+
+      try {
+        const response = await fetch(`${backendUrl}/appointments/${appointmentId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ patient_name, date, time, notes })
+        });
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        alert('Cita actualizada exitosamente');
+        window.location.href = 'calendar.html';
+      } catch (error) {
+        console.error('Error al actualizar cita:', error);
+        alert('Error al actualizar la cita. Intenta de nuevo.');
+      }
+    });
+
+    // Eliminar cita
+    document.getElementById('deleteButton').addEventListener('click', async () => {
+      if (confirm('¿Estás seguro de que quieres eliminar esta cita?')) {
+        try {
+          const response = await fetch(`${backendUrl}/appointments/${appointmentId}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+          }
+          alert('Cita eliminada exitosamente');
+          window.location.href = 'calendar.html';
+        } catch (error) {
+          console.error('Error al eliminar cita:', error);
+          alert('Error al eliminar la cita. Intenta de nuevo.');
+        }
+      }
     });
   </script>
 </body>

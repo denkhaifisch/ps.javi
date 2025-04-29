@@ -5,11 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calendario - Psicóloga</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FullCalendar CSS -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
-  <!-- FullCalendar JS -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
-  <!-- FullCalendar Spanish Locale -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/es.js"></script>
   <style>
     #calendar {
@@ -25,6 +22,9 @@
     .appointment-item {
       padding: 10px;
       border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
   </style>
 </head>
@@ -79,7 +79,7 @@
           throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
         const appointments = await response.json();
-        console.log('Citas cargadas:', appointments); // Depuración
+        console.log('Citas cargadas:', appointments);
 
         // Actualizar lista de citas
         const list = document.getElementById('appointmentsList');
@@ -92,11 +92,52 @@
         } else {
           appointments.forEach(apt => {
             const li = document.createElement('li');
-            li.textContent = `${apt.patient_name} - ${apt.date} ${apt.time} - ${apt.notes || 'Sin notas'}`;
             li.className = 'appointment-item';
+            li.innerHTML = `
+              <span>${apt.patient_name} - ${apt.date} ${apt.time} - ${apt.notes || 'Sin notas'}</span>
+              <div>
+                <button class="edit-btn bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 mr-2" data-id="${apt.id}">Editar</button>
+                <button class="delete-btn bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700" data-id="${apt.id}">Eliminar</button>
+              </div>
+            `;
             list.appendChild(li);
           });
         }
+
+        // Event listeners para botones de editar y eliminar
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const appointmentId = btn.getAttribute('data-id');
+            window.location.href = `edit.html?id=${appointmentId}`;
+          });
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const appointmentId = btn.getAttribute('data-id');
+            if (confirm('¿Estás seguro de que quieres eliminar esta cita?')) {
+              try {
+                const response = await fetch(`${backendUrl}/appointments/${appointmentId}`, {
+                  method: 'DELETE',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+                if (!response.ok) {
+                  throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                alert('Cita eliminada exitosamente');
+                await loadAppointments();
+                const calendar = document.getElementById('calendar')._calendarApi;
+                calendar.refetchEvents();
+              } catch (error) {
+                console.error('Error al eliminar cita:', error);
+                alert('Error al eliminar la cita. Intenta de nuevo.');
+              }
+            }
+          });
+        });
 
         return appointments;
       } catch (error) {
@@ -162,9 +203,9 @@
         }
         alert('Cita creada exitosamente');
         document.getElementById('appointmentForm').reset();
-        await loadAppointments(); // Actualizar lista
+        await loadAppointments();
         const calendar = document.getElementById('calendar')._calendarApi;
-        calendar.refetchEvents(); // Actualizar calendario
+        calendar.refetchEvents();
       } catch (error) {
         console.error('Error al crear cita:', error);
         alert('Error al crear la cita. Por favor, intenta de nuevo.');

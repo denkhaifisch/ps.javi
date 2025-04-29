@@ -25,14 +25,23 @@
     </div>
   </div>
   <script>
-    const backendUrl = 'https://ps-javi-backend.vercel.app'; // 
+    const backendUrl = 'https://ps-javi-backend.vercel.app';
 
     // Verificar si ya existe una cuenta
     async function checkAccount() {
-      const response = await fetch(`${backendUrl}/check-account`);
-      const result = await response.json();
-      if (result.accountCreated) {
-        document.getElementById('signupSection').style.display = 'none';
+      try {
+        const response = await fetch(`${backendUrl}/check-account`);
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        const result = await response.json();
+        console.log('Check account:', result); // Depuración
+        if (result.accountCreated) {
+          document.getElementById('signupSection').style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error al verificar cuenta:', error);
+        alert('Error al verificar si existe una cuenta. Intenta de nuevo.');
       }
     }
     checkAccount();
@@ -42,17 +51,22 @@
       e.preventDefault();
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      const response = await fetch(`${backendUrl}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const result = await response.json();
-      if (response.ok) {
-        localStorage.setItem('token', result.token);
-        window.location.href = 'calendar.html';
-      } else {
-        alert(result.error);
+      try {
+        const response = await fetch(`${backendUrl}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const result = await response.json();
+        if (response.ok) {
+          localStorage.setItem('token', result.token);
+          window.location.href = 'calendar.html';
+        } else {
+          alert(result.error);
+        }
+      } catch (error) {
+        console.error('Error al iniciar sesión:', error);
+        alert('Error al iniciar sesión. Intenta de nuevo.');
       }
     });
 
@@ -61,17 +75,22 @@
       const email = prompt('Ingresa tu correo:');
       const password = prompt('Ingresa tu contraseña:');
       if (email && password) {
-        const response = await fetch(`${backendUrl}/signup`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-        const result = await response.json();
-        if (response.ok) {
-          alert('Cuenta creada. Revisa tu correo para verificar.');
-          document.getElementById('signupSection').style.display = 'none';
-        } else {
-          alert(result.error);
+        try {
+          const response = await fetch(`${backendUrl}/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          const result = await response.json();
+          if (response.ok) {
+            alert('Cuenta creada. Revisa tu correo para verificar.');
+            document.getElementById('signupSection').style.display = 'none';
+          } else {
+            alert(result.error);
+          }
+        } catch (error) {
+          console.error('Error al crear cuenta:', error);
+          alert('Error al crear cuenta. Intenta de nuevo.');
         }
       }
     });
