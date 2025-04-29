@@ -3,30 +3,70 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iniciar Sesión - Psicóloga</title>
+  <title>Agenda - Psicóloga</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-lime-100 p-6">
   <div class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-lg">
-    <h1 class="text-2xl font-bold text-lime-600 mb-6">Iniciar Sesión</h1>
+    <h1 class="text-2xl font-bold text-lime-600 mb-4">Iniciar Sesión</h1>
     <form id="loginForm" class="space-y-4">
       <div>
-        <label for="email" class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
-        <input type="email" id="email" class="w-full p-2 border rounded-md focus:ring-lime-500 focus:border-lime-500" required>
+        <label for="email" class="block text-sm font-medium">Correo</label>
+        <input type="email" id="email" class="w-full p-2 border rounded" required>
       </div>
       <div>
-        <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
-        <input type="password" id="password" class="w-full p-2 border rounded-md focus:ring-lime-500 focus:border-lime-500" required>
+        <label for="password" class="block text-sm font-medium">Contraseña</label>
+        <input type="password" id="password" class="w-full p-2 border rounded" required>
       </div>
-      <button type="submit" class="w-full bg-lime-600 text-white px-4 py-2 rounded-md hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-lime-500">Iniciar Sesión</button>
+      <button type="submit" class="bg-lime-600 text-white px-4 py-2 rounded hover:bg-lime-700">Iniciar Sesión</button>
     </form>
-    <p class="mt-4 text-center text-sm text-gray-600">
-      ¿No tienes cuenta? <a href="signup.html" class="text-lime-600 hover:underline">Regístrate</a>
-    </p>
+    <div id="signupSection" class="mt-4 hidden">
+      <button id="signupButton" class="bg-lime-600 text-white px-4 py-2 rounded hover:bg-lime-700">Crear cuenta</button>
+    </div>
   </div>
-
   <script>
     const backendUrl = 'https://ps-javi-backend.vercel.app';
+    const token = localStorage.getItem('token');
+
+    // Verificar si la sesión sigue activa
+    async function checkSession() {
+      if (token) {
+        try {
+          const response = await fetch(`${backendUrl}/appointments`, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (response.ok) {
+            window.location.href = 'calendar.html';
+          } else {
+            localStorage.removeItem('token');
+          }
+        } catch (error) {
+          console.error('Error al verificar sesión:', error);
+          localStorage.removeItem('token');
+        }
+      }
+    }
+
+    // Verificar si ya existe una cuenta
+    async function checkAccount() {
+      try {
+        const response = await fetch(`${backendUrl}/check-account`);
+        const result = await response.json();
+        if (response.ok && !result.accountCreated) {
+          document.getElementById('signupSection').classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Error al verificar si existe cuenta:', error);
+        alert('Error al verificar si existe cuenta');
+      }
+    }
+
+    // Ejecutar verificaciones
+    checkSession();
+    checkAccount();
 
     // Formulario de login
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -45,11 +85,36 @@
           localStorage.setItem('token', result.token);
           window.location.href = 'calendar.html';
         } else {
-          alert(result.error || 'Error al iniciar sesión');
+          alert(result.error);
         }
       } catch (error) {
         console.error('Error al iniciar sesión:', error);
         alert('Error al iniciar sesión. Intenta de nuevo.');
+      }
+    });
+
+    // Botón de crear cuenta
+    document.getElementById('signupButton').addEventListener('click', async () => {
+      const email = prompt('Ingresa tu correo:');
+      const password = prompt('Ingresa tu contraseña:');
+      if (email && password) {
+        try {
+          const response = await fetch(`${backendUrl}/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          const result = await response.json();
+          if (response.ok) {
+            alert('Cuenta creada. Revisa tu correo para verificar.');
+            document.getElementById('signupSection').classList.add('hidden');
+          } else {
+            alert(result.error);
+          }
+        } catch (error) {
+          console.error('Error al crear cuenta:', error);
+          alert('Error al crear cuenta. Intenta de nuevo.');
+        }
       }
     });
   </script>
