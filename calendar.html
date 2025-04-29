@@ -3,75 +3,77 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda - Psicóloga</title>
+  <title>Calendario - Psicóloga</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/es.js"></script>
-  <style>
-    /* Ajustes para responsividad y espaciado */
-    .fc .fc-daygrid-day {
-      min-height: 80px; /* Más altura para cada día */
-    }
-    .fc .fc-timegrid-slot {
-      height: 2em; /* Más altura para bloques horarios */
-    }
-    @media (max-width: 640px) {
-      .fc .fc-daygrid-day {
-        min-height: 60px; /* Ajuste para móviles */
-      }
-      .fc .fc-col-header-cell {
-        font-size: 0.8rem; /* Tamaño de fuente más pequeño en móviles */
-      }
-      .fc .fc-timegrid-slot {
-        height: 1.5em; /* Ajuste para móviles */
-      }
-    }
-  </style>
 </head>
-<body class="bg-lime-100 p-4 sm:p-6">
-  <div class="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-    <h1 class="text-2xl font-bold text-lime-600 mb-4">Agenda Mensual</h1>
-    <h2 id="calendar-title" class="text-xl font-semibold text-lime-700 mb-4"></h2>
-    <div id="calendar" class="mb-6"></div>
-    <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">
-      <button onclick="window.location.href='schedule.html'" class="bg-lime-600 text-white px-4 py-2 rounded hover:bg-lime-700">Agendar</button>
-      <button onclick="window.location.href='unschedule.html'" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Desagendar</button>
-      <button onclick="window.location.href='edit.html'" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Editar Paciente</button>
-    </div>
+<body class="bg-lime-100 p-6">
+  <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+    <h1 class="text-2xl font-bold text-lime-600 mb-4">Calendario de Citas</h1>
+    <form id="appointmentForm" class="space-y-4 mb-6">
+      <div>
+        <label for="patient_name" class="block text-sm font-medium">Nombre del Paciente</label>
+        <input type="text" id="patient_name" class="w-full p-2 border rounded" required>
+      </div>
+      <div>
+        <label for="date" class="block text-sm font-medium">Fecha</label>
+        <input type="date" id="date" class="w-full p-2 border rounded" required>
+      </div>
+      <div>
+        <label for="time" class="block text-sm font-medium">Hora</label>
+        <input type="time" id="time" class="w-full p-2 border rounded" required>
+      </div>
+      <div>
+        <label for="notes" class="block text-sm font-medium">Notas</label>
+        <textarea id="notes" class="w-full p-2 border rounded"></textarea>
+      </div>
+      <button type="submit" class="bg-lime-600 text-white px-4 py-2 rounded hover:bg-lime-700">Agregar Cita</button>
+    </form>
+    <h2 class="text-xl font-bold text-lime-600 mb-4">Citas Programadas</h2>
+    <ul id="appointmentsList" class="space-y-2"></ul>
   </div>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const calendarEl = document.getElementById('calendar');
-      const calendarTitle = document.getElementById('calendar-title');
-      
-      const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'timeGridWeek',
-        slotDuration: '01:00:00',
-        slotMinTime: '08:00:00',
-        slotMaxTime: '20:00:00',
-        locale: 'es',
-        dayHeaderFormat: { weekday: 'short', day: 'numeric' }, // Ej: "Lun 14"
-        headerToolbar: {
-          left: 'prev,next',
-          center: '',
-          right: 'today'
-        },
-        events: [
-          { title: 'Paciente Ejemplo', start: new Date().toISOString().split('T')[0] + 'T10:00:00' }
-        ],
-        eventClick: () => { window.location.href = 'patient-info.html'; },
-        datesSet: (dateInfo) => {
-          // Actualiza el título con el mes actual
-          const month = calendar.formatDate(dateInfo.start, { month: 'long' });
-          calendarTitle.textContent = month.charAt(0).toUpperCase() + month.slice(1);
+    const backendUrl = 'https://ps-javi-backend.vercel.app';
+    const token = localStorage.getItem('token');
+
+    async function loadAppointments() {
+      const response = await fetch(`${backendUrl}/appointments`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
       });
-      calendar.render();
-      
-      // Inicializa el título con el mes actual
-      const initialMonth = calendar.formatDate(new Date(), { month: 'long' });
-      calendarTitle.textContent = initialMonth.charAt(0).toUpperCase() + initialMonth.slice(1);
+      const appointments = await response.json();
+      const list = document.getElementById('appointmentsList');
+      list.innerHTML = '';
+      appointments.forEach(apt => {
+        const li = document.createElement('li');
+        li.textContent = `${apt.patient_name} - ${apt.date} ${apt.time} - ${apt.notes || 'Sin notas'}`;
+        list.appendChild(li);
+      });
+    }
+    loadAppointments();
+
+    document.getElementById('appointmentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const patient_name = document.getElementById('patient_name').value;
+      const date = document.getElementById('date').value;
+      const time = document.getElementById('time').value;
+      const notes = document.getElementById('notes').value;
+      const response = await fetch(`${backendUrl}/appointments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ patient_name, date, time, notes })
+      });
+      if (response.ok) {
+        alert('Cita creada');
+        loadAppointments();
+        document.getElementById('appointmentForm').reset();
+      } else {
+        alert('Error al crear cita');
+      }
     });
   </script>
 </body>
